@@ -74,77 +74,13 @@ const PlayButton = styled.button`
   }
 `;
 
-const RunButton = styled.button`
-  background-color: #4CAF50;
-  color: white;
-  padding: 8px 15px;
-  border: none;
-  border-radius: 3px;
-  margin-top: 5px;
-  cursor: pointer;
-  &:hover {
-    background-color: #45a049;
-  }
-`;
-
-const PlayPauseButton = styled.button`
-  background-color: #4CAF50;
-  color: white;
-  padding: 8px 15px;
-  border: none;
-  border-radius: 3px;
-  margin-top: 5px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  
-  &:hover {
-    background-color: #45a049;
-  }
-  
-  &:disabled {
-    background-color: #95a5a6;
-    cursor: not-allowed;
-  }
-`;
-
-const PlayIcon = styled.span`
-  display: inline-block;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 10px 0 10px 15px;
-  border-color: transparent transparent transparent white;
-  margin-left: 3px;
-`;
-
-const PauseIcon = styled.span`
-  display: flex;
-  gap: 3px;
-  
-  &::before,
-  &::after {
-    content: '';
-    width: 5px;
-    height: 20px;
-    background-color: white;
-  }
-`;
-
 // Store console states globally
 const consoleStates = {};
 
 const JavaScriptConsole = ({ 
-  gameState, 
-  setGameState, 
   consoleId, 
   content, 
   onContentChange,
-  onBuyItem,
-  onSellItem,
   farm,
   setPrintFunction
 }) => {
@@ -177,7 +113,6 @@ const JavaScriptConsole = ({
   const outputRef = useRef(output);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentLine, setCurrentLine] = useState(0);
-  const codeLines = useRef([]);
   const executionInterval = useRef(null);
 
   // Keep outputRef in sync

@@ -40,13 +40,6 @@ const CloseButton = styled.button`
   }
 `;
 
-const TechTreeContainer = styled.div`
-  background-color: #34495e;
-  padding: 15px;
-  border-radius: 5px;
-  margin-top: 20px;
-`;
-
 const TechTreeHeader = styled.h3`
   color: #fff;
   margin-bottom: 15px;

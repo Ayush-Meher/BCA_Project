@@ -1,0 +1,12 @@
+{
+  "type": "MeshStandardMaterial",
+  "map": "grass_diffuse.jpg",
+  "normalMap": "grass_normal.jpg",
+  "roughnessMap": "grass_roughness.jpg",
+  "normalScale": [
+    1,
+    1
+  ],
+  "roughness": 0.8,
+  "metalness": 0.2
+}

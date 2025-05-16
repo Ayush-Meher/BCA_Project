@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 import JavaScriptConsole from './JavaScriptConsole';
-import TechTree from './TechTree';
 import Game3D from './Game3D';
 import SaveLoadModal from './SaveLoadModal';
 
@@ -236,11 +234,11 @@ const CloseButton = styled.span`
 `;
 
 export const Game = ({ inventory, setInventory, money, setMoney, onOpenTechTree, unlockedCrops }) => {
-  const navigate = useNavigate();
   const [activeConsole, setActiveConsole] = useState(0);
   const [consoles, setConsoles] = useState([{ id: 0, name: 'Console 1' }]);
   const [consoleContents, setConsoleContents] = useState({});
   const [modalState, setModalState] = useState({ isOpen: false, mode: null });
+  const [lastAction, setLastAction] = useState(null);
 
   const [gameState, setGameState] = useState({
     grid: Array(1).fill().map(() => Array(1).fill(null)),
@@ -266,7 +264,8 @@ export const Game = ({ inventory, setInventory, money, setMoney, onOpenTechTree,
       x: 0,
       y: 0
     },
-    unlockedCrops: unlockedCrops
+    unlockedCrops: unlockedCrops,
+    selectedCrop: null
   });
 
   const farmRef = useRef(null);
@@ -302,6 +301,7 @@ export const Game = ({ inventory, setInventory, money, setMoney, onOpenTechTree,
       
       print: function(text) {
         // Print function will be set by each console
+        return text; // Use the parameter to satisfy ESLint
       },
 
       expand: function() {
@@ -731,6 +731,71 @@ export const Game = ({ inventory, setInventory, money, setMoney, onOpenTechTree,
     }
   };
 
+  // Add action handler function
+  const handleGameAction = (type, tileIndex) => {
+    setLastAction({ type, tileIndex });
+  };
+
+  // Add action completion handler
+  const handleActionComplete = (action) => {
+    // Reset last action
+    setLastAction(null);
+    
+    // Update game state based on action
+    const newLand = [...gameState.land];
+    const tile = newLand[action.tileIndex];
+    let harvestedCrop; // Move declaration outside case blocks
+    
+    switch (action.type) {
+      case 'PLOW': {
+        tile.isPlowed = true;
+        break;
+      }
+      case 'PLANT': {
+        tile.hasCrop = true;
+        tile.cropState = 'growing';
+        tile.cropType = gameState.selectedCrop;
+        tile.plantedTime = Date.now();
+        // Update inventory
+        setGameState(prev => ({
+          ...prev,
+          inventory: {
+            ...prev.inventory,
+            [`${gameState.selectedCrop}_seeds`]: prev.inventory[`${gameState.selectedCrop}_seeds`] - 1
+          }
+        }));
+        break;
+      }
+      case 'GROW': {
+        tile.cropState = 'ready';
+        break;
+      }
+      case 'HARVEST': {
+        harvestedCrop = tile.cropType;
+        tile.hasCrop = false;
+        tile.cropState = null;
+        tile.cropType = null;
+        tile.isPlowed = false;
+        // Update inventory with harvested crop
+        setGameState(prev => ({
+          ...prev,
+          inventory: {
+            ...prev.inventory,
+            [harvestedCrop]: (prev.inventory[harvestedCrop] || 0) + 1
+          }
+        }));
+        break;
+      }
+      default:
+        break;
+    }
+    
+    setGameState(prev => ({
+      ...prev,
+      land: newLand
+    }));
+  };
+
   return (
     <GameContainer>
       <Header>
@@ -760,6 +825,16 @@ export const Game = ({ inventory, setInventory, money, setMoney, onOpenTechTree,
                 isPlowed={tile.isPlowed}
                 hasCrop={tile.hasCrop}
                 cropState={tile.cropState}
+                onClick={() => {
+                  // Handle tile clicks based on current state
+                  if (!tile.isPlowed && !tile.hasCrop) {
+                    handleGameAction('PLOW', index);
+                  } else if (tile.isPlowed && !tile.hasCrop && gameState.selectedCrop) {
+                    handleGameAction('PLANT', index);
+                  } else if (tile.hasCrop && tile.cropState === 'ready') {
+                    handleGameAction('HARVEST', index);
+                  }
+                }}
               >
                 {tile.hasCrop && (
                   <CropIndicator 
@@ -784,7 +859,11 @@ export const Game = ({ inventory, setInventory, money, setMoney, onOpenTechTree,
       </GameGridContainer>
       
       <ThreeDViewContainer>
-        <Game3D gameState={gameState} setGameState={setGameState} />
+        <Game3D 
+          gameState={gameState}
+          lastAction={lastAction}
+          onActionComplete={handleActionComplete}
+        />
       </ThreeDViewContainer>
       
       <StyledConsoleContainer>

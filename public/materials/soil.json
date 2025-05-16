@@ -1,0 +1,12 @@
+{
+  "type": "MeshStandardMaterial",
+  "map": "soil_diffuse.jpg",
+  "normalMap": "soil_normal.jpg",
+  "roughnessMap": "soil_roughness.jpg",
+  "normalScale": [
+    1,
+    1
+  ],
+  "roughness": 0.9,
+  "metalness": 0.1
+}
