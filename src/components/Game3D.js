@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -9,6 +9,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { DataTexture } from 'three';
+import TutorialGuide from './TutorialGuide';
 
 const Game3D = ({ 
   gameState, 
@@ -22,6 +23,12 @@ const Game3D = ({
   const modelsRef = useRef({});
   const texturesRef = useRef({});
   const actionQueueRef = useRef([]);
+  const [showTutorial, setShowTutorial] = useState(true);
+  const [tutorialProgress, setTutorialProgress] = useState({
+    completedSteps: new Set(),
+    currentStep: 0,
+    lastAction: null
+  });
 
   // Convert game coordinates to scene coordinates
   const gameToScene = React.useCallback((x, y) => {
@@ -729,6 +736,72 @@ const Game3D = ({
     }
   }, [lastAction]);
 
+  // Initialize tutorial
+  useEffect(() => {
+    // Check if tutorial was previously completed
+    const tutorialComplete = localStorage.getItem('farmingTutorialComplete');
+    if (tutorialComplete === 'true') {
+      setShowTutorial(false);
+    } else {
+      // Show tutorial after a short delay
+      const timer = setTimeout(() => {
+        setShowTutorial(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Update tutorial progress based on actions
+  useEffect(() => {
+    if (lastAction && showTutorial) {
+      const { completedSteps } = tutorialProgress;
+      
+      // Update progress based on action type
+      switch (lastAction.type) {
+        case 'PLOW':
+          if (!completedSteps.has('first_plow')) {
+            completedSteps.add('first_plow');
+          }
+          break;
+        case 'PLANT':
+          if (!completedSteps.has('first_plant')) {
+            completedSteps.add('first_plant');
+          }
+          break;
+      }
+
+      // Save progress
+      setTutorialProgress(prev => ({
+        ...prev,
+        completedSteps,
+        lastAction
+      }));
+    }
+  }, [lastAction, showTutorial]);
+
+  // Reset tutorial when game state changes
+  useEffect(() => {
+    if (gameState.land.length > 0) {
+      // Reset tutorial progress when starting a new game
+      setTutorialProgress({
+        completedSteps: new Set(),
+        lastAction: null
+      });
+      
+      // Show tutorial unless previously completed
+      const tutorialComplete = localStorage.getItem('farmingTutorialComplete');
+      if (tutorialComplete !== 'true') {
+        setShowTutorial(true);
+      }
+    }
+  }, [gameState.land.length]);
+
+  // Handle tutorial completion
+  const handleTutorialComplete = () => {
+    setShowTutorial(false);
+    localStorage.setItem('farmingTutorialComplete', 'true');
+  };
+
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -999,7 +1072,8 @@ const Game3D = ({
       margin: '0 auto',
       borderRadius: '8px',
       overflow: 'hidden',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+      position: 'relative'
     }}>
       <canvas 
         ref={canvasRef}
@@ -1008,6 +1082,11 @@ const Game3D = ({
           height: '100%'
         }}
       />
+      {showTutorial && (
+        <TutorialGuide
+          onComplete={handleTutorialComplete}
+        />
+      )}
     </div>
   );
 };
